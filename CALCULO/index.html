@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volumen de una piscina con Fubini</title>
+<style>
+  :root{
+    --p:#0e7490; --p-osc:#0c4a6e; --p-cl:#e0f2fe; --acento:#f59e0b;
+    --txt:#0f172a; --gris:#64748b; --borde:#e2e8f0; --fondo:#f1f5f9; --blanco:#fff; --ok:#059669;
+    --r:16px; --sombra:0 4px 20px rgba(12,74,110,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:70px}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Calibri,sans-serif;color:var(--txt);background:var(--fondo);line-height:1.7;font-size:17px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+  /* ---------- Barra de navegación ---------- */
+  nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--borde)}
+  nav .wrap{display:flex;gap:4px;overflow-x:auto;padding:10px 20px;justify-content:center}
+  nav a{white-space:nowrap;color:var(--p-osc);text-decoration:none;font-size:14px;font-weight:600;padding:6px 14px;border-radius:999px;transition:.2s}
+  nav a:hover{background:var(--p-cl)}
+
+  /* ---------- Portada ---------- */
+  .hero{background:linear-gradient(135deg,#0c4a6e 0%,#0e7490 60%,#22b8cf 100%);color:#fff;padding:70px 0 90px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:50px;background:var(--fondo);clip-path:ellipse(60% 100% at 50% 100%)}
+  .etiqueta{display:inline-block;background:rgba(255,255,255,.16);padding:5px 16px;border-radius:999px;font-size:13px;letter-spacing:.5px;margin-bottom:18px}
+  .hero h1{font-size:clamp(28px,4.6vw,46px);line-height:1.2;max-width:820px;margin-bottom:14px}
+  .hero p.sub{font-size:18px;opacity:.9;max-width:680px;margin-bottom:30px}
+  .equipo{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:22px;max-width:860px}
+  .persona{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:12px 16px;font-weight:600;font-size:16px;line-height:1.35}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;font-size:14px}
+  .chips span{background:rgba(0,0,0,.2);padding:5px 14px;border-radius:999px}
+
+  /* ---------- Secciones ---------- */
+  section{padding:46px 0 6px}
+  .titulo{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  .num{flex:none;width:42px;height:42px;border-radius:12px;background:var(--p);color:#fff;font-weight:700;display:grid;place-items:center;font-size:18px}
+  h2{font-size:28px;color:var(--p-osc);line-height:1.2}
+  .intro{color:var(--gris);margin:0 0 22px 56px;max-width:720px}
+  @media(max-width:640px){.intro{margin-left:0}}
+  h3{font-size:19px;color:var(--p-osc);margin-bottom:8px}
+
+  .card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r);padding:24px;box-shadow:var(--sombra)}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  .mt{margin-top:18px}
+
+  .formula{background:var(--p-cl);border-radius:12px;padding:14px 18px;margin:12px 0;font-family:"Cambria Math","Times New Roman",serif;font-size:20px;text-align:center;color:var(--p-osc);overflow-x:auto}
+  .paso{background:#f8fafc;border-left:4px solid var(--p);border-radius:8px;padding:10px 14px;margin:10px 0;font-family:"Cambria Math","Times New Roman",serif;font-size:17px;overflow-x:auto}
+  .nota{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 16px;margin-top:14px;font-size:16px}
+  .nota b{color:#92400e}
+  .ok{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px 18px;margin-top:14px}
+  .aviso{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px 14px;margin:10px 0;font-size:15px}
+  .peque{font-size:14px;color:var(--gris)}
+
+  /* resumen */
+  .kw{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .kw span{background:var(--p-cl);color:var(--p-osc);padding:4px 14px;border-radius:999px;font-size:14px;font-weight:600}
+
+  /* datos del problema */
+  .ficha{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .dato{background:var(--p-cl);border-radius:12px;padding:12px;text-align:center}
+  .dato b{display:block;font-size:26px;color:var(--p-osc);line-height:1.1}
+  .dato small{color:var(--gris);font-size:13px}
+  .obj{display:flex;gap:12px;align-items:flex-start;margin:10px 0}
+  .obj i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--acento);color:#fff;font-style:normal;font-weight:700;display:grid;place-items:center;font-size:14px;margin-top:2px}
+
+  /* teoría */
+  .icono{font-size:30px;margin-bottom:6px}
+
+  /* resultado grande */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  @media(max-width:560px){.stats{grid-template-columns:1fr}}
+  .stat{background:linear-gradient(135deg,var(--p-osc),var(--p));color:#fff;border-radius:14px;padding:16px;text-align:center}
+  .stat b{display:block;font-size:30px;line-height:1.1}
+  .stat small{opacity:.85}
+
+  /* calculadora */
+  .campos{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  label{display:block;font-size:13px;color:var(--gris);font-weight:600}
+  input[type=number]{width:100%;padding:9px 10px;border:1px solid var(--borde);border-radius:10px;font-size:16px;margin-top:3px;background:#f8fafc}
+  input[type=number]:focus{outline:2px solid var(--p);background:#fff}
+  input[type=range]{width:100%;accent-color:var(--p)}
+  canvas{width:100%;height:auto;border-radius:12px;background:linear-gradient(#e0f2fe,#fff);border:1px solid var(--borde);display:block}
+
+  table{border-collapse:collapse;width:100%;font-size:15px;margin-top:8px}
+  th,td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--borde)}
+  th{background:var(--p-cl);color:var(--p-osc);font-size:14px}
+  tr:last-child td{border-bottom:none}
+  .tabla-scroll{overflow-x:auto}
+
+  pre{background:#0f172a;color:#e2e8f0;padding:18px;border-radius:12px;overflow-x:auto;font-size:14px;line-height:1.55;font-family:Consolas,"Courier New",monospace}
+  code{font-family:Consolas,"Courier New",monospace;background:var(--p-cl);padding:1px 6px;border-radius:6px;font-size:14px}
+  .consola{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px 18px;font-family:Consolas,"Courier New",monospace;font-size:13.5px;line-height:1.75;overflow-x:auto;white-space:pre}
+  canvas.graf{background:#fff}
+  .cap{margin-top:10px}
+  summary{cursor:pointer;font-weight:700;color:var(--p-osc)}
+  ul.lista{padding-left:20px}
+  ul.lista li{margin:6px 0}
+
+  .ref{padding-left:1.27cm;text-indent:-1.27cm;margin:10px 0}
+  footer{text-align:center;color:var(--gris);padding:40px 20px;font-size:14px}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a href="#resumen">Resumen</a>
+  <a href="#problema">Problema</a>
+  <a href="#teoria">Teoría</a>
+  <a href="#solucion">Solución</a>
+  <a href="#simulador">Simulador</a>
+  <a href="#polar">Tanque circular</a>
+  <a href="#python">Validación</a>
+  <a href="#resultados">Resultados</a>
+  <a href="#refs">Referencias</a>
+</div></nav>
+
+<!-- ============ PORTADA ============ -->
+<header class="hero"><div class="wrap">
+  <span class="etiqueta">PROYECTO DE AULA · CÁLCULO MULTIVARIABLE</span>
+  <h1>Volumen de una piscina con fondo inclinado usando integrales iteradas y el Teorema de Fubini</h1>
+  <p class="sub">¿Cuánta agua cabe en una piscina que es más honda de un lado que del otro? Lo resolvemos con integrales dobles.</p>
+  <div class="equipo">
+    <div class="persona">Camila Alejandra Flórez Monsalve</div>
+    <div class="persona">María Camila Sánchez Pabon</div>
+    <div class="persona">Luis Sebastian Camacho Solano</div>
+  </div>
+  <div class="chips">
+    <span>Universidad Simón Bolívar · Cúcuta</span>
+    <span>Ing. de Sistemas / Ing. Industrial</span>
+    <span>Cálculo Multivariable (5092)</span>
+    <span>Docente: Ing. Wilson Armando Castellanos Vera</span>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<!-- ============ RESUMEN ============ -->
+<section id="resumen">
+  <div class="titulo"><div class="num">R</div><h2>Resumen</h2></div>
+  <div class="card">
+    <p>Este proyecto calcula cuánta agua cabe en una piscina de 10 m de largo y 5 m de ancho cuyo fondo es una rampa: 1 m de profundidad en un extremo y 2 m en el otro. Como la profundidad cambia de un punto a otro, se modela como una función z = f(x, y) y el volumen como una integral doble. Con el Teorema de Fubini se resuelve como integral iterada en los dos órdenes (dy dx y dx dy), y ambos dan 75 m³ (75.000 litros). El modelo se extiende a regiones triangulares (tipo I y II) y a un tanque circular con coordenadas polares. El resultado se valida con un simulador web, un gráfico 3D y un script de Python con SymPy y Matplotlib, y coincide con la comprobación área × profundidad promedio.</p>
+    <div class="kw"><span>Integrales iteradas</span><span>Teorema de Fubini</span><span>Coordenadas polares</span><span>Modelado en ingeniería</span><span>Simulación numérica</span></div>
+  </div>
+</section>
+
+<!-- ============ PROBLEMA ============ -->
+<section id="problema">
+  <div class="titulo"><div class="num">1</div><h2>El problema y los objetivos</h2></div>
+  <p class="intro">Una empresa debe llenar una piscina y necesita saber cuánta agua pedir.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Planteamiento</h3>
+      <p>La piscina es rectangular, pero su fondo no es plano: es una rampa. No se puede usar largo × ancho × alto porque la profundidad cambia. Se necesita el volumen exacto de agua y lo que cuesta llenarla.</p>
+      <div class="ficha">
+        <div class="dato"><b>10 m</b><small>largo</small></div>
+        <div class="dato"><b>5 m</b><small>ancho</small></div>
+        <div class="dato"><b>1 → 2 m</b><small>profundidad</small></div>
+      </div>
+      <div class="nota"><b>¿Por qué importa?</b> Calcular capacidad de formas irregulares (tanques, bodegas, enfriamiento de un centro de datos) es un problema típico de ingeniería. El modelo multivariable evita aproximaciones a ojo.</div>
+    </div>
+    <div class="card">
+      <h3>Objetivo general</h3>
+      <p>Determinar el volumen de agua de la piscina aplicando el Teorema de Fubini e integrales múltiples.</p>
+      <h3 style="margin-top:16px">Objetivos específicos</h3>
+      <div class="obj"><i>1</i><span>Formular los límites de integración de la región (el piso de la piscina).</span></div>
+      <div class="obj"><i>2</i><span>Evaluar a mano las integrales iteradas en los dos órdenes, dy dx y dx dy.</span></div>
+      <div class="obj"><i>3</i><span>Validar el resultado con el simulador web, el gráfico 3D y Python.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEORÍA ============ -->
+<section id="teoria">
+  <div class="titulo"><div class="num">2</div><h2>Marco teórico</h2></div>
+  <p class="intro">Cuatro ideas, explicadas sin complicaciones.</p>
+  <div class="grid g2">
+    <div class="card">
+      <div class="icono">🧱</div>
+      <h3>Integral doble</h3>
+      <p>Imagina el piso de la piscina dividido en cuadritos. Sobre cada uno hay una columna de agua de volumen <b>profundidad × área del cuadrito</b>. La integral doble suma todas las columnas.</p>
+      <div class="formula">V = ∬<sub>R</sub> f(x, y) dA</div>
+    </div>
+    <div class="card">
+      <div class="icono">🔁</div>
+      <h3>Teorema de Fubini</h3>
+      <p>Para un rectángulo R = [a, b] × [c, d] se puede integrar en cualquier orden y el resultado es el mismo.</p>
+      <div class="formula" style="font-size:17px">∫<sub>c</sub><sup>d</sup>∫<sub>a</sub><sup>b</sup> f dx dy = ∫<sub>a</sub><sup>b</sup>∫<sub>c</sub><sup>d</sup> f dy dx</div>
+      <div class="nota"><b>Analogía:</b> en una tabla de números puedes sumar primero las filas o primero las columnas, y el total es igual.</div>
+    </div>
+    <div class="card">
+      <div class="icono">📐</div>
+      <h3>Regiones tipo I y tipo II</h3>
+      <p>Si el piso no es un rectángulo (por ejemplo, tiene una esquina en diagonal), los límites de adentro dependen de la otra variable.</p>
+      <div class="formula" style="font-size:17px">Tipo I: g₁(x) ≤ y ≤ g₂(x)<br>Tipo II: h₁(y) ≤ x ≤ h₂(y)</div>
+    </div>
+    <div class="card">
+      <div class="icono">⭕</div>
+      <h3>Coordenadas polares</h3>
+      <p>Para formas circulares se usa x = r cos θ, y = r sen θ. El factor <b>r</b> (Jacobiano) aparece porque los cuadritos lejos del centro son más grandes.</p>
+      <div class="formula">dA = r dr dθ</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SOLUCIÓN ============ -->
+<section id="solucion">
+  <div class="titulo"><div class="num">3</div><h2>Solución paso a paso</h2></div>
+  <p class="intro">Primero se modela la piscina y luego se resuelve en los dos órdenes.</p>
+
+  <div class="card">
+    <h3>Paso 1. Modelar el piso y la profundidad</h3>
+    <p>Una esquina de la piscina va en el origen. El piso es el rectángulo y la profundidad crece 0,1 m por cada metro de largo:</p>
+    <div class="formula">R = [0, 10] × [0, 5]&nbsp;&nbsp;&nbsp;&nbsp; f(x, y) = 1 + 0,1x</div>
+    <p class="peque">Comprobación: en x = 0 vale 1 m y en x = 10 vale 2 m.</p>
+    <h3 style="margin-top:14px">Paso 2. Plantear la integral</h3>
+    <div class="formula">V = ∬<sub>R</sub> (1 + 0,1x) dA</div>
+  </div>
+
+  <div class="grid g2 mt">
+    <div class="card">
+      <h3>Paso 3. Orden dy dx</h3>
+      <p>Primero y (x queda fija), luego x.</p>
+      <div class="paso">∫₀⁵ (1 + 0,1x) dy = 5(1 + 0,1x) = 5 + 0,5x</div>
+      <div class="paso">∫₀¹⁰ (5 + 0,5x) dx = 5x + 0,25x² |₀¹⁰ = 50 + 25 = <b>75</b></div>
+    </div>
+    <div class="card">
+      <h3>Paso 4. Orden dx dy</h3>
+      <p>Primero x (y queda fija), luego y.</p>
+      <div class="paso">∫₀¹⁰ (1 + 0,1x) dx = x + 0,05x² |₀¹⁰ = 10 + 5 = 15</div>
+      <div class="paso">∫₀⁵ 15 dy = 15y |₀⁵ = <b>75</b></div>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="stats">
+      <div class="stat"><b>75 m³</b><small>volumen en ambos órdenes</small></div>
+      <div class="stat"><b>75.000 L</b><small>litros de agua</small></div>
+      <div class="stat"><b>1,5 m</b><small>profundidad promedio</small></div>
+    </div>
+    <div class="ok"><b>✔ Fubini se cumple:</b> los dos órdenes dan el mismo volumen. <b>Sentido común:</b> 10 × 5 × 1,5 = 75 m³.</div>
+  </div>
+
+  <div class="card mt">
+    <h3>Paso 5. Región que no es rectángulo</h3>
+    <p>Una piscina triangular con vértices (0,0), (4,0) y (4,4) y profundidad constante de 2 m. Se puede ver como 0 ≤ x ≤ 4 y 0 ≤ y ≤ x.</p>
+    <div class="grid g2">
+      <div class="paso"><b>Tipo I</b> (0 ≤ x ≤ 4, 0 ≤ y ≤ x)<br>∫₀⁴∫₀ˣ 2 dy dx = ∫₀⁴ 2x dx = <b>16 m³</b></div>
+      <div class="paso"><b>Tipo II</b> (0 ≤ y ≤ 4, y ≤ x ≤ 4)<br>∫₀⁴∫ᵧ⁴ 2 dx dy = ∫₀⁴ 2(4 − y) dy = <b>16 m³</b></div>
+    </div>
+    <p class="peque">Comprobación: área del triángulo = 8 m², y 8 × 2 = 16 m³.</p>
+  </div>
+</section>
+
+<!-- ============ SIMULADOR ============ -->
+<section id="simulador">
+  <div class="titulo"><div class="num">4</div><h2>Simulador interactivo</h2></div>
+  <p class="intro">Cambia las medidas y comprueba que los dos órdenes siempre coinciden. La profundidad es f(x, y) = a + b·x + c·y.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>Datos de la piscina</h3>
+      <div class="campos">
+        <label>Largo L (m)<input type="number" id="L" value="10" min="0.1" step="0.5"></label>
+        <label>Ancho W (m)<input type="number" id="W" value="5" min="0.1" step="0.5"></label>
+        <label>a: profundidad en x = 0 (m)<input type="number" id="a" value="1" step="0.1"></label>
+        <label>b: pendiente a lo largo<input type="number" id="b" value="0.1" step="0.01"></label>
+        <label>c: pendiente a lo ancho<input type="number" id="c" value="0" step="0.01"></label>
+        <label>Precio del agua (COP/m³)<input type="number" id="precio" value="3500" min="0" step="100"></label>
+      </div>
+      <p class="peque" style="margin-top:8px">El precio es un ejemplo editable.</p>
+      <div id="alerta"></div>
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><b id="vol">–</b><small>m³</small></div>
+        <div class="stat"><b id="litros">–</b><small>litros</small></div>
+        <div class="stat"><b id="costo">–</b><small>COP</small></div>
+      </div>
+      <p class="peque" id="check"></p>
+    </div>
+    <div class="card">
+      <h3>Vista 3D</h3>
+      <canvas id="cv" width="700" height="460"></canvas>
+      <label style="margin-top:10px">Girar la piscina<input type="range" id="giro" min="-90" max="90" value="-30"></label>
+    </div>
+  </div>
+
+  <div class="grid g2 mt">
+    <div class="card"><h3>Orden dy dx</h3><div id="pasosA"></div></div>
+    <div class="card"><h3>Orden dx dy</h3><div id="pasosB"></div></div>
+  </div>
+
+  <div class="card mt">
+    <h3>Fubini en una tabla</h3>
+    <p>El piso se divide en 5 × 5 cuadros. Cada celda es el volumen de agua sobre ese cuadro. Suma las filas o las columnas: el total es el mismo.</p>
+    <div class="tabla-scroll" id="tabla"></div>
+  </div>
+</section>
+
+<!-- ============ POLAR ============ -->
+<section id="polar">
+  <div class="titulo"><div class="num">5</div><h2>Extensión: tanque circular</h2></div>
+  <p class="intro">Un tanque cilíndrico de radio R y profundidad h usa coordenadas polares.</p>
+  <div class="grid g2">
+    <div class="card">
+      <div class="formula" style="font-size:18px">V = ∫₀<sup>2π</sup>∫₀<sup>R</sup> h · r dr dθ = h · (R²/2) · 2π = πR²h</div>
+      <p>Es la fórmula conocida del volumen de un cilindro, lo que confirma que el método funciona.</p>
+      <p class="peque">Ejemplo: R = 3 y h = 2 → V = 18π ≈ 56,55 m³.</p>
+    </div>
+    <div class="card">
+      <div class="campos">
+        <label>Radio R (m)<input type="number" id="R" value="3" min="0.1" step="0.5"></label>
+        <label>Profundidad h (m)<input type="number" id="h" value="2" min="0.1" step="0.5"></label>
+      </div>
+      <div class="stats" style="grid-template-columns:repeat(2,1fr)">
+        <div class="stat"><b id="volP">–</b><small>m³</small></div>
+        <div class="stat"><b id="litP">–</b><small>litros</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PYTHON ============ -->
+<section id="python">
+  <div class="titulo"><div class="num">6</div><h2>Validación computacional</h2></div>
+  <p class="intro">Aquí se muestra lo que entrega el programa de Python (SymPy y Matplotlib): los resultados y las gráficas. Todo se calcula en vivo con los datos del simulador, que por defecto son los de la piscina del proyecto.</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>Salida del programa</h3>
+      <div class="consola" id="consola"></div>
+      <p class="peque" style="margin-top:10px">Así se ve la salida en la terminal de VS Code. Cada línea es una forma distinta de calcular el mismo volumen; los tiempos reales dependen de cada computador.</p>
+    </div>
+    <div class="card">
+      <h3>Comparación de métodos</h3>
+      <div id="valEstado"></div>
+      <div class="tabla-scroll" id="valTabla"></div>
+      <p class="peque" style="margin-top:8px"><b>Fórmula:</b> la integral resuelta a mano, evaluada en el computador. <b>Suma de Riemann:</b> el piso se divide en 160.000 cuadritos y se suma el agua de cada columna.</p>
+    </div>
+  </div>
+
+  <div class="grid g2 mt">
+    <div class="card">
+      <h3>Gráfica 1. Fondo de la piscina (3D)</h3>
+      <canvas id="g1" class="graf" width="1120" height="760"></canvas>
+      <p class="peque cap">Cuanto más oscuro, más profundo. La línea punteada es el nivel del agua. El volumen es el espacio entre esa línea y el fondo.</p>
+    </div>
+    <div class="card">
+      <h3>Gráfica 2. Vista de lado</h3>
+      <canvas id="g2" class="graf" width="1120" height="760"></canvas>
+      <p class="peque cap">El agua (azul) llena el espacio entre la superficie y el fondo. Se ve cómo la profundidad crece a lo largo de la piscina.</p>
+    </div>
+    <div class="card">
+      <h3>Gráfica 3. Vista desde arriba</h3>
+      <canvas id="g3" class="graf" width="1120" height="760"></canvas>
+      <p class="peque cap">Cada color es una profundidad y cada número es el volumen de agua de ese cuadro (m³). Sumando los 25 cuadros se obtiene el total.</p>
+    </div>
+    <div class="card">
+      <h3>Gráfica 4. El error baja con más cuadritos</h3>
+      <canvas id="g4" class="graf" width="1120" height="760"></canvas>
+      <p class="peque cap">Con pocos cuadritos la suma es solo aproximada. Al hacerlos más pequeños, el error se acerca a cero: esa es la idea de la integral doble.</p>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <h3>Tabla de convergencia</h3>
+    <div class="tabla-scroll" id="valConv"></div>
+  </div>
+</section>
+
+<!-- ============ RESULTADOS ============ -->
+<section id="resultados">
+  <div class="titulo"><div class="num">7</div><h2>Resultados, discusión y conclusiones</h2></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Comparación de métodos</h3>
+      <table>
+        <tr><th>Método</th><th>Volumen (m³)</th></tr>
+        <tr><td>A mano, dy dx</td><td>75</td></tr>
+        <tr><td>A mano, dx dy</td><td>75</td></tr>
+        <tr><td>SymPy</td><td>75</td></tr>
+        <tr><td>Suma de Riemann</td><td>≈ 75</td></tr>
+        <tr><td>Área × prof. promedio</td><td>75</td></tr>
+      </table>
+      <ul class="lista" style="margin-top:12px">
+        <li><b>Orden:</b> no cambia el resultado. Con dx dy resulta un poco más corto, porque la profundidad solo depende de x.</li>
+        <li><b>Costo:</b> con la tarifa de ejemplo, llenarla cuesta unos 262.500 COP.</li>
+        <li><b>Ahorro del modelo:</b> suponer 2 m de profundidad en todo el fondo daría 100 m³, es decir 25 m³ de más.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Conclusiones</h3>
+      <ul class="lista">
+        <li>Se cumplieron los tres objetivos: límites formulados, dos órdenes evaluados y resultado validado con herramientas computacionales.</li>
+        <li>Fubini convierte un volumen en dos integrales simples, y el orden elegido no altera el resultado.</li>
+        <li>El mismo método sirve para fondos inclinados, regiones triangulares y tanques circulares.</li>
+      </ul>
+      <h3 style="margin-top:16px">Recomendaciones</h3>
+      <ul class="lista">
+        <li>Probar un fondo curvo, por ejemplo z = 1 + 0,01x².</li>
+        <li>Usar piscinas con forma de L o incluir las paredes con una integral triple.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFERENCIAS ============ -->
+<section id="refs">
+  <div class="titulo"><div class="num">8</div><h2>Referencias</h2></div>
+  <div class="card">
+    <p class="ref">Edwards, B., &amp; Larson, R. (2017). <i>Matemáticas III: cálculo de varias variables</i>. Cengage Learning.</p>
+    <p class="ref">Stewart, J. (2012). <i>Cálculo de varias variables: trascendentes tempranas</i> (7.ª ed.). Cengage Learning.</p>
+    <p class="ref">Thomas, G. B. (2010). <i>Cálculo: Varias variables</i> (12.ª ed.). Pearson Educación.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>Proyecto de Aula · Cálculo Multivariable (5092) · Universidad Simón Bolívar, Cúcuta</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (n, d = 2) => Number(n).toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: d});
+const leer = () => ({L: +$('L').value, W: +$('W').value, a: +$('a').value, b: +$('b').value, c: +$('c').value, p: +$('precio').value});
+
+function calcular() {
+  const {L, W, a, b, c, p} = leer();
+  if (!(L > 0 && W > 0)) return;
+  const f = (x, y) => a + b * x + c * y;
+  const esq = [f(0, 0), f(L, 0), f(0, W), f(L, W)];
+  const minP = Math.min(...esq);
+  $('alerta').innerHTML = minP < 0
+    ? '<div class="aviso">La profundidad sale negativa en una esquina (' + fmt(minP) + ' m). Ajusta a, b o c.</div>' : '';
+
+  const t1 = a * L * W, t2 = b * L * L * W / 2, t3 = c * L * W * W / 2, V = t1 + t2 + t3;
+
+  $('pasosA').innerHTML =
+    `<div class="paso">Interior (en y):<br>∫₀^${fmt(W)} (${fmt(a)} + ${fmt(b)}x + ${fmt(c)}y) dy<br>= (${fmt(a)} + ${fmt(b)}x)·${fmt(W)} + ${fmt(c)}·${fmt(W)}²/2</div>` +
+    `<div class="paso">Exterior (en x):<br>= ${fmt(t1)} + ${fmt(t2)} + ${fmt(t3)} = <b>${fmt(V)} m³</b></div>`;
+  $('pasosB').innerHTML =
+    `<div class="paso">Interior (en x):<br>∫₀^${fmt(L)} (${fmt(a)} + ${fmt(b)}x + ${fmt(c)}y) dx<br>= ${fmt(a)}·${fmt(L)} + ${fmt(b)}·${fmt(L)}²/2 + ${fmt(c)}·${fmt(L)}·y</div>` +
+    `<div class="paso">Exterior (en y):<br>= ${fmt(t1)} + ${fmt(t2)} + ${fmt(t3)} = <b>${fmt(V)} m³</b></div>`;
+
+  // Comprobación numérica (suma de Riemann, punto medio) en los dos órdenes
+  const n = 300; let s1 = 0, s2 = 0;
+  for (let j = 0; j < n; j++) { const y = (j + .5) * W / n; let q = 0; for (let i = 0; i < n; i++) q += f((i + .5) * L / n, y) * L / n; s1 += q * W / n; }
+  for (let i = 0; i < n; i++) { const x = (i + .5) * L / n; let q = 0; for (let j = 0; j < n; j++) q += f(x, (j + .5) * W / n) * W / n; s2 += q * L / n; }
+  const prom = esq.reduce((s, v) => s + v, 0) / 4;
+
+  $('vol').textContent = fmt(V);
+  $('litros').textContent = fmt(V * 1000, 0);
+  $('costo').textContent = fmt(V * p, 0);
+  $('check').innerHTML = `Suma numérica: dy dx = ${fmt(s2, 4)} · dx dy = ${fmt(s1, 4)}.<br>Sentido común: ${fmt(L)} × ${fmt(W)} × ${fmt(prom)} (profundidad promedio) = ${fmt(L * W * prom)} m³.`;
+
+  tabla(f, L, W);
+  validar(f, L, W);
+  dibujar();
+}
+
+/* ---------- Validación en vivo ---------- */
+function validar(f, L, W) {
+  const {a, b, c} = leer();
+  const ms = t => t < 0.001 ? '< 0,001' : fmt(t, 3);
+
+  const t0 = performance.now();
+  const dydx = a * L * W + b * L * L * W / 2 + c * L * W * W / 2;
+  const t1 = performance.now();
+  const dxdy = (a * L + b * L * L / 2) * W + c * L * W * W / 2;
+  const t2 = performance.now();
+
+  const n = 400; let rm = 0;
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) rm += f((i + .5) * L / n, (j + .5) * W / n);
+  rm *= (L / n) * (W / n);
+  const t3 = performance.now();
+
+  const prom = (f(0, 0) + f(L, 0) + f(0, W) + f(L, W)) / 4;
+  const sc = L * W * prom;
+
+  const filas = [
+    ['Fórmula, orden dy dx', dydx, ms(t1 - t0)],
+    ['Fórmula, orden dx dy', dxdy, ms(t2 - t1)],
+    ['Suma de Riemann (400 × 400)', rm, ms(t3 - t2)],
+    ['Sentido común: área × prof. promedio', sc, '–']
+  ];
+  const tol = 1e-6 * Math.max(1, Math.abs(dydx));
+  let ok = true, h = '<table><tr><th>Método</th><th>Volumen (m³)</th><th>Diferencia con dy dx</th><th>Tiempo (ms)</th></tr>';
+  for (const [nom, v, t] of filas) {
+    const d = Math.abs(v - dydx); if (d > tol) ok = false;
+    h += `<tr><td style="text-align:left">${nom}</td><td><b>${fmt(v, 4)}</b></td><td>${d < tol ? '0' : fmt(d, 6)}</td><td>${t}</td></tr>`;
+  }
+  h += '</table>';
+  $('valTabla').innerHTML = h;
+  $('valEstado').innerHTML = ok
+    ? '<div class="ok" style="margin:0 0 10px"><b>✔ Validado:</b> todos los métodos dan el mismo volumen, así que el resultado hecho a mano es correcto.</div>'
+    : '<div class="aviso">Hay diferencias entre los métodos. Revisa los datos del simulador.</div>';
+
+  // Convergencia: suma de Riemann con la esquina izquierda de cada cuadrito
+  let c2 = '<table><tr><th>Cuadritos (n × n)</th><th>Aproximación (m³)</th><th>Error (m³)</th><th>Error (%)</th></tr>';
+  for (const m of [2, 5, 10, 50, 100, 400]) {
+    let s = 0;
+    for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) s += f(i * L / m, j * W / m);
+    s *= (L / m) * (W / m);
+    const e = Math.abs(s - dydx);
+    c2 += `<tr><td>${m} × ${m}</td><td>${fmt(s, 4)}</td><td>${fmt(e, 4)}</td><td>${dydx ? fmt(e / Math.abs(dydx) * 100, 3) : '–'}</td></tr>`;
+  }
+  $('valConv').innerHTML = c2 + '</table>';
+  consola({dydx, dxdy, rm, sc, tA: t1 - t0, tB: t2 - t1, tC: t3 - t2, ok,
+    md: Math.max(...filas.map(r => Math.abs(r[1] - dydx)))});
+  graficas(f, L, W, dydx);
+}
+
+function tabla(f, L, W) {
+  const n = 5, dx = L / n, dy = W / n, cel = [];
+  for (let j = 0; j < n; j++) { cel[j] = []; for (let i = 0; i < n; i++) cel[j][i] = f((i + .5) * dx, (j + .5) * dy) * dx * dy; }
+  const fil = cel.map(r => r.reduce((s, v) => s + v, 0));
+  const col = [0, 1, 2, 3, 4].map(i => cel.reduce((s, r) => s + r[i], 0));
+  const totF = fil.reduce((s, v) => s + v, 0), totC = col.reduce((s, v) => s + v, 0);
+  let h = '<table><tr><th></th>';
+  for (let i = 0; i < n; i++) h += `<th>Col ${i + 1}</th>`;
+  h += '<th>Suma fila</th></tr>';
+  for (let j = 0; j < n; j++) {
+    h += `<tr><th>Fila ${j + 1}</th>`;
+    for (let i = 0; i < n; i++) h += `<td>${fmt(cel[j][i])}</td>`;
+    h += `<td><b>${fmt(fil[j])}</b></td></tr>`;
+  }
+  h += '<tr><th>Suma col.</th>';
+  for (let i = 0; i < n; i++) h += `<td><b>${fmt(col[i])}</b></td>`;
+  h += '<td></td></tr></table>';
+  h += `<div class="ok">Sumando filas: <b>${fmt(totF)} m³</b> · Sumando columnas: <b>${fmt(totC)} m³</b> → mismo total.</div>`;
+  $('tabla').innerHTML = h;
+}
+
+/* ---------- Dibujo 3D (canvas, sin librerías) ---------- */
+function dibujar() {
+  const {L, W, a, b, c} = leer();
+  if (!(L > 0 && W > 0)) return;
+  const cv = $('cv'), g = cv.getContext('2d');
+  g.clearRect(0, 0, cv.width, cv.height);
+  const f = (x, y) => a + b * x + c * y;
+  const t = $('giro').value * Math.PI / 180;
+  const maxP = Math.max(f(0, 0), f(L, 0), f(0, W), f(L, W), 0.1);
+  const s = Math.min(330 / Math.max(L, W), 250 / (L + W) * 1.2);
+  const ox = cv.width / 2, oy = 170;
+
+  const P = (x, y, z) => {
+    const X = x - L / 2, Y = y - W / 2;
+    const xr = X * Math.cos(t) - Y * Math.sin(t), yr = X * Math.sin(t) + Y * Math.cos(t);
+    return {sx: ox + xr * s, sy: oy + (yr * .5 - z) * s * 1.3, d: yr};
+  };
+  const quad = (p, fill, stroke) => {
+    g.beginPath(); g.moveTo(p[0].sx, p[0].sy);
+    for (let k = 1; k < p.length; k++) g.lineTo(p[k].sx, p[k].sy);
+    g.closePath();
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); }
+  };
+
+  const nx = 24, ny = 12, celdas = [];
+  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+    const x0 = i * L / nx, x1 = (i + 1) * L / nx, y0 = j * W / ny, y1 = (j + 1) * W / ny;
+    const pts = [P(x0, y0, -f(x0, y0)), P(x1, y0, -f(x1, y0)), P(x1, y1, -f(x1, y1)), P(x0, y1, -f(x0, y1))];
+    celdas.push({pts, d: pts.reduce((s, q) => s + q.d, 0), pr: f((x0 + x1) / 2, (y0 + y1) / 2)});
+  }
+  celdas.sort((u, v) => u.d - v.d);
+  for (const q of celdas) {
+    const k = Math.max(0, Math.min(1, q.pr / maxP));
+    quad(q.pts, `rgb(${Math.round(150 - 110 * k)},${Math.round(210 - 110 * k)},${Math.round(240 - 70 * k)})`, 'rgba(12,74,110,.22)');
+  }
+  const top = (x, y) => P(x, y, 0);
+  const paredes = [
+    [top(0, 0), top(L, 0), P(L, 0, -f(L, 0)), P(0, 0, -f(0, 0))],
+    [top(L, 0), top(L, W), P(L, W, -f(L, W)), P(L, 0, -f(L, 0))],
+    [top(L, W), top(0, W), P(0, W, -f(0, W)), P(L, W, -f(L, W))],
+    [top(0, W), top(0, 0), P(0, 0, -f(0, 0)), P(0, W, -f(0, W))]
+  ];
+  for (const w of paredes) quad(w, 'rgba(125,180,220,.16)', 'rgba(12,74,110,.5)');
+  quad([top(0, 0), top(L, 0), top(L, W), top(0, W)], 'rgba(80,170,235,.2)', '#0c4a6e');
+
+  g.fillStyle = '#0c4a6e'; g.font = '15px Segoe UI, Arial';
+  g.fillText('Profundidad en x = 0: ' + fmt(f(0, 0)) + ' m', 14, cv.height - 38);
+  g.fillText('Profundidad en x = ' + fmt(L) + ': ' + fmt(f(L, 0)) + ' m', 14, cv.height - 16);
+}
+
+/* ---------- Salida tipo terminal ---------- */
+function consola(o) {
+  const v = s => `<span style="color:#7dd3fc">${s}</span>`;
+  const ok = s => `<span style="color:#86efac">${s}</span>`;
+  const m = s => `<span style="color:#94a3b8">${s}</span>`;
+  const t = s => (s / 1000).toFixed(5);
+  const lin = [
+    ok('$ python piscina.py'),
+    m('─'.repeat(44)),
+    `Orden dy dx ......... ${v(fmt(o.dydx, 4) + ' m³')}  ${m('(' + t(o.tA) + ' s)')}`,
+    `Orden dx dy ......... ${v(fmt(o.dxdy, 4) + ' m³')}  ${m('(' + t(o.tB) + ' s)')}`,
+    `Suma de Riemann ..... ${v(fmt(o.rm, 4) + ' m³')}  ${m('(400 × 400)')}`,
+    `Sentido común ....... ${v(fmt(o.sc, 4) + ' m³')}  ${m('(área × prof. promedio)')}`,
+    m('─'.repeat(44)),
+    `Diferencia máxima ... ${v(o.md < 1e-9 ? '0' : o.md.toFixed(6))}`,
+    o.ok ? ok('✔ VALIDADO: todos los métodos coinciden') : '<span style="color:#fca5a5">✘ Hay diferencias entre los métodos</span>',
+    m('Gráficas generadas: 4')
+  ];
+  $('consola').innerHTML = lin.join('\n');
+}
+
+/* ---------- Gráficas de la validación (canvas) ---------- */
+const cProf = k => {
+  k = Math.max(0, Math.min(1, k));
+  return `rgb(${Math.round(186 - 150 * k)},${Math.round(230 - 120 * k)},${Math.round(253 - 70 * k)})`;
+};
+
+function lienzo(id) {
+  const g = $(id).getContext('2d');
+  g.setTransform(2, 0, 0, 2, 0, 0);
+  g.clearRect(0, 0, 560, 380);
+  g.setLineDash([]); g.lineWidth = 1; g.lineJoin = 'round';
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.font = '12px Segoe UI, Arial';
+  return g;
+}
+
+function paso(max) {
+  max = Math.max(max, 1e-9);
+  const raw = max / 5, mag = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / mag;
+  return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * mag;
+}
+
+function barraColor(g, x, y, w, h, dmin, dmax) {
+  const gr = g.createLinearGradient(0, y, 0, y + h);
+  gr.addColorStop(0, cProf(1)); gr.addColorStop(1, cProf(0));
+  g.fillStyle = gr; g.fillRect(x, y, w, h);
+  g.strokeStyle = '#94a3b8'; g.lineWidth = 1; g.strokeRect(x, y, w, h);
+  g.fillStyle = '#475569'; g.textAlign = 'left'; g.font = '12px Segoe UI, Arial';
+  g.fillText(fmt(dmax) + ' m', x + w + 6, y + 9);
+  g.fillText(fmt(dmin) + ' m', x + w + 6, y + h);
+  g.font = 'bold 12px Segoe UI, Arial';
+  g.fillText('Profundidad', x - 24, y - 10);
+}
+
+function graficas(f, L, W, V) {
+  const esq = [f(0, 0), f(L, 0), f(0, W), f(L, W)];
+  const dmin = Math.min(...esq), dmax = Math.max(...esq);
+  if (dmin < 0 || dmax <= 0) {
+    for (const id of ['g1', 'g2', 'g3', 'g4']) {
+      const g = lienzo(id);
+      g.fillStyle = '#64748b'; g.font = '15px Segoe UI, Arial'; g.textAlign = 'center';
+      g.fillText('Ajusta los datos del simulador', 280, 190);
+    }
+    return;
+  }
+  const kf = d => dmax === dmin ? 0.6 : (d - dmin) / (dmax - dmin);
+  graf1(f, L, W, dmin, dmax, kf);
+  graf2(f, L, W);
+  graf3(f, L, W, dmin, dmax, kf);
+  graf4(f, L, W, V);
+}
+
+/* Gráfica 1: fondo en 3D */
+function graf1(f, L, W, dmin, dmax, kf) {
+  const g = lienzo('g1'), t = -35 * Math.PI / 180;
+  const R = (x, y, z) => {
+    const X = x - L / 2, Y = y - W / 2, yr = X * Math.sin(t) + Y * Math.cos(t);
+    return {x: X * Math.cos(t) - Y * Math.sin(t), y: yr * 0.5 - z * 1.3, d: yr};
+  };
+  const ext = [];
+  for (const [x, y] of [[0, 0], [L, 0], [L, W], [0, W]]) { ext.push(R(x, y, 0)); ext.push(R(x, y, -f(x, y))); }
+  const xs = ext.map(p => p.x), ys = ext.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const s = Math.min(420 / (maxX - minX), 290 / (maxY - minY));
+  const ox = 20 + (420 - (maxX - minX) * s) / 2 - minX * s;
+  const oy = 36 + (290 - (maxY - minY) * s) / 2 - minY * s;
+  const P = (x, y, z) => { const r = R(x, y, z); return {sx: ox + r.x * s, sy: oy + r.y * s, d: r.d}; };
+  const poli = (pts, fill, stroke, lw) => {
+    g.beginPath(); g.moveTo(pts[0].sx, pts[0].sy);
+    for (let k = 1; k < pts.length; k++) g.lineTo(pts[k].sx, pts[k].sy);
+    g.closePath();
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); }
+  };
+
+  const nx = 28, ny = 14, celdas = [];
+  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+    const x0 = i * L / nx, x1 = (i + 1) * L / nx, y0 = j * W / ny, y1 = (j + 1) * W / ny;
+    const pts = [P(x0, y0, -f(x0, y0)), P(x1, y0, -f(x1, y0)), P(x1, y1, -f(x1, y1)), P(x0, y1, -f(x0, y1))];
+    celdas.push({pts, d: pts.reduce((a, q) => a + q.d, 0), k: kf(f((x0 + x1) / 2, (y0 + y1) / 2))});
+  }
+  celdas.sort((u, v) => u.d - v.d);
+  for (const q of celdas) poli(q.pts, cProf(q.k), 'rgba(255,255,255,.45)', 0.6);
+
+  const top = (x, y) => P(x, y, 0);
+  const paredes = [
+    [top(0, 0), top(L, 0), P(L, 0, -f(L, 0)), P(0, 0, -f(0, 0))],
+    [top(L, 0), top(L, W), P(L, W, -f(L, W)), P(L, 0, -f(L, 0))],
+    [top(L, W), top(0, W), P(0, W, -f(0, W)), P(L, W, -f(L, W))],
+    [top(0, W), top(0, 0), P(0, 0, -f(0, 0)), P(0, W, -f(0, W))]
+  ];
+  for (const w of paredes) poli(w, 'rgba(125,180,220,.14)', 'rgba(12,74,110,.55)', 1.2);
+
+  g.setLineDash([6, 4]);
+  poli([top(0, 0), top(L, 0), top(L, W), top(0, W)], 'rgba(56,189,248,.16)', '#0369a1', 1.8);
+  g.setLineDash([]);
+
+  // medidas
+  const a1 = top(L / 2, 0), a2 = top(L / 2, W), b1 = top(0, W / 2), b2 = top(L, W / 2);
+  const fl = a1.sy > a2.sy ? a1 : a2, fw = b1.sx > b2.sx ? b1 : b2;
+  g.fillStyle = '#0c4a6e'; g.font = 'bold 13px Segoe UI, Arial';
+  g.textAlign = 'center'; g.fillText('L = ' + fmt(L) + ' m', fl.sx, fl.sy + 20);
+  g.textAlign = 'left'; g.fillText('W = ' + fmt(W) + ' m', fw.sx + 10, fw.sy + 4);
+
+  barraColor(g, 488, 70, 14, 210, dmin, dmax);
+}
+
+/* Gráfica 2: vista de lado */
+function graf2(f, L, W) {
+  const g = lienzo('g2'), c = leer().c;
+  const x0 = 64, y0 = 44, w = 456, h = 266;
+  const N = 60, xs = Array.from({length: N + 1}, (_, i) => i * L / N);
+  const dm = x => f(x, W / 2);
+  const dTop = Math.max(...xs.map(x => Math.max(f(x, 0), f(x, W))));
+  const st = paso(dTop * 1.2), eje = Math.ceil(dTop * 1.2 / st) * st;
+  const X = x => x0 + x / L * w, Y = d => y0 + d / eje * h;
+
+  g.strokeStyle = '#e2e8f0'; g.fillStyle = '#64748b'; g.textAlign = 'right'; g.lineWidth = 1;
+  for (let d = 0; d <= eje + 1e-9; d += st) {
+    g.beginPath(); g.moveTo(x0, Y(d)); g.lineTo(x0 + w, Y(d)); g.stroke();
+    g.fillText(fmt(d), x0 - 8, Y(d) + 4);
+  }
+
+  // terreno
+  g.beginPath(); g.moveTo(X(0), Y(dm(0)));
+  xs.forEach(x => g.lineTo(X(x), Y(dm(x))));
+  g.lineTo(X(L), y0 + h); g.lineTo(X(0), y0 + h); g.closePath();
+  g.fillStyle = '#e7ddcb'; g.fill();
+
+  // agua
+  const gr = g.createLinearGradient(0, y0, 0, Y(dTop));
+  gr.addColorStop(0, '#bae6fd'); gr.addColorStop(1, '#0284c7');
+  g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(L), Y(0));
+  for (let i = N; i >= 0; i--) g.lineTo(X(xs[i]), Y(dm(xs[i])));
+  g.closePath(); g.fillStyle = gr; g.fill();
+
+  // fondo
+  g.beginPath();
+  xs.forEach((x, i) => i ? g.lineTo(X(x), Y(dm(x))) : g.moveTo(X(x), Y(dm(x))));
+  g.strokeStyle = '#0c4a6e'; g.lineWidth = 3; g.stroke();
+
+  // nivel del agua
+  g.setLineDash([6, 4]); g.lineWidth = 1.6; g.strokeStyle = '#0369a1';
+  g.beginPath(); g.moveTo(x0, Y(0)); g.lineTo(x0 + w, Y(0)); g.stroke(); g.setLineDash([]);
+
+  // bordes laterales si la profundidad cambia a lo ancho
+  if (Math.abs(c) > 1e-9) {
+    for (const yy of [0, W]) {
+      g.beginPath();
+      xs.forEach((x, i) => i ? g.lineTo(X(x), Y(f(x, yy))) : g.moveTo(X(x), Y(f(x, yy))));
+      g.setLineDash([5, 4]); g.strokeStyle = '#f59e0b'; g.lineWidth = 2; g.stroke(); g.setLineDash([]);
+    }
+    g.fillStyle = '#b45309'; g.font = '12px Segoe UI, Arial'; g.textAlign = 'left';
+    g.fillText('Líneas naranjas: bordes y = 0 y y = W', x0 + 8, y0 + h - 8);
+  }
+
+  // flechas de profundidad
+  const flecha = (xx, d, alin) => {
+    g.strokeStyle = '#082f49'; g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(xx, Y(0)); g.lineTo(xx, Y(d));
+    g.moveTo(xx - 5, Y(0)); g.lineTo(xx + 5, Y(0));
+    g.moveTo(xx - 5, Y(d)); g.lineTo(xx + 5, Y(d));
+    g.stroke();
+    const txt = fmt(d) + ' m', tx = alin === 'left' ? xx + 9 : xx - 9, ty = (Y(0) + Y(d)) / 2 + 5;
+    g.textAlign = alin; g.font = 'bold 14px Segoe UI, Arial';
+    g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(txt, tx, ty);
+    g.fillStyle = '#082f49'; g.fillText(txt, tx, ty);
+  };
+  flecha(X(0) + 16, dm(0), 'left');
+  flecha(X(L) - 16, dm(L), 'right');
+
+  // ejes
+  g.font = '12px Segoe UI, Arial'; g.fillStyle = '#64748b'; g.textAlign = 'center';
+  const sx = paso(L);
+  for (let x = 0; x <= L + 1e-9; x += sx) g.fillText(fmt(x), X(x), y0 + h + 16);
+  g.fillText('x: largo de la piscina (m)', x0 + w / 2, y0 + h + 36);
+  g.textAlign = 'left'; g.fillText('Profundidad (m)', 8, y0 - 18);
+  g.textAlign = 'right'; g.fillStyle = '#0369a1'; g.fillText('nivel del agua', x0 + w, y0 - 8);
+}
+
+/* Gráfica 3: vista desde arriba con el volumen de cada cuadro */
+function graf3(f, L, W, dmin, dmax, kf) {
+  const g = lienzo('g3');
+  const s = Math.min(410 / L, 262 / W), pw = L * s, ph = W * s;
+  const x0 = 50 + (410 - pw) / 2, y0 = 34 + (262 - ph) / 2;
+  const n = 5, cw = pw / n, ch = ph / n;
+  let tot = 0;
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const d = f((i + .5) * L / n, (j + .5) * W / n), v = d * (L / n) * (W / n);
+    tot += v;
+    const cx = x0 + i * cw, cy = y0 + (n - 1 - j) * ch;
+    g.fillStyle = cProf(kf(d)); g.fillRect(cx, cy, cw, ch);
+    g.fillStyle = kf(d) > 0.55 ? '#fff' : '#0c4a6e';
+    g.font = (cw < 52 ? '11px' : '13px') + ' Segoe UI, Arial'; g.textAlign = 'center';
+    g.fillText(fmt(v), cx + cw / 2, cy + ch / 2 + 4);
+  }
+  g.strokeStyle = '#fff'; g.lineWidth = 2;
+  for (let i = 0; i <= n; i++) {
+    g.beginPath(); g.moveTo(x0 + i * cw, y0); g.lineTo(x0 + i * cw, y0 + ph); g.stroke();
+    g.beginPath(); g.moveTo(x0, y0 + i * ch); g.lineTo(x0 + pw, y0 + i * ch); g.stroke();
+  }
+  g.strokeStyle = '#0c4a6e'; g.lineWidth = 2; g.strokeRect(x0, y0, pw, ph);
+
+  g.fillStyle = '#64748b'; g.font = '12px Segoe UI, Arial';
+  g.textAlign = 'center';
+  g.fillText('0', x0, y0 + ph + 16); g.fillText(fmt(L), x0 + pw, y0 + ph + 16);
+  g.fillText('x: largo (m)', x0 + pw / 2, y0 + ph + 16);
+  g.textAlign = 'right';
+  g.fillText('0', x0 - 8, y0 + ph + 4); g.fillText(fmt(W), x0 - 8, y0 + 4);
+  g.save(); g.translate(14, y0 + ph / 2); g.rotate(-Math.PI / 2); g.textAlign = 'center';
+  g.fillText('y: ancho (m)', 0, 0); g.restore();
+
+  g.fillStyle = '#0c4a6e'; g.font = 'bold 14px Segoe UI, Arial'; g.textAlign = 'center';
+  g.fillText('Suma de los 25 cuadros = ' + fmt(tot) + ' m³', 250, 358);
+
+  barraColor(g, 488, 70, 14, 200, dmin, dmax);
+}
+
+/* Gráfica 4: error de la suma de Riemann */
+function graf4(f, L, W, V) {
+  const g = lienzo('g4'), ns = [2, 5, 10, 20, 50, 100, 200, 400];
+  const err = ns.map(m => {
+    let s = 0;
+    for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) s += f(i * L / m, j * W / m);
+    s *= (L / m) * (W / m);
+    return Math.abs(s - V) / V * 100;
+  });
+  const maxE = Math.max(...err), x0 = 64, y0 = 46, w = 470, h = 262;
+  if (maxE < 1e-9) {
+    g.textAlign = 'center';
+    g.fillStyle = '#059669'; g.font = 'bold 16px Segoe UI, Arial';
+    g.fillText('Error = 0 en todos los casos', 280, 180);
+    g.fillStyle = '#64748b'; g.font = '13px Segoe UI, Arial';
+    g.fillText('La profundidad es constante, así que la suma ya es exacta.', 280, 206);
+    return;
+  }
+  const st = paso(maxE * 1.15), top = Math.ceil(maxE * 1.15 / st) * st;
+  g.strokeStyle = '#e2e8f0'; g.fillStyle = '#64748b'; g.textAlign = 'right'; g.lineWidth = 1; g.font = '12px Segoe UI, Arial';
+  for (let v = 0; v <= top + 1e-9; v += st) {
+    const yy = y0 + h - v / top * h;
+    g.beginPath(); g.moveTo(x0, yy); g.lineTo(x0 + w, yy); g.stroke();
+    g.fillText(fmt(v, 1), x0 - 8, yy + 4);
+  }
+  const slot = w / ns.length, bw = slot * 0.62;
+  ns.forEach((m, i) => {
+    const bh = err[i] / top * h, bx = x0 + i * slot + (slot - bw) / 2, by = y0 + h - bh;
+    const gr = g.createLinearGradient(0, by, 0, y0 + h);
+    gr.addColorStop(0, '#22b8cf'); gr.addColorStop(1, '#0c4a6e');
+    g.fillStyle = gr; g.fillRect(bx, by, bw, bh);
+    g.textAlign = 'center';
+    g.fillStyle = '#0c4a6e'; g.font = 'bold 12px Segoe UI, Arial';
+    g.fillText(fmt(err[i], 2) + '%', bx + bw / 2, by - 6);
+    g.fillStyle = '#64748b'; g.font = '12px Segoe UI, Arial';
+    g.fillText(m + '×' + m, bx + bw / 2, y0 + h + 16);
+  });
+  g.strokeStyle = '#94a3b8'; g.beginPath(); g.moveTo(x0, y0 + h); g.lineTo(x0 + w, y0 + h); g.stroke();
+  g.fillStyle = '#64748b'; g.textAlign = 'center';
+  g.fillText('Cuadritos (n × n)', x0 + w / 2, y0 + h + 38);
+  g.textAlign = 'left'; g.fillText('Error de la aproximación (%)', 8, y0 - 18);
+}
+
+/* ---------- Tanque circular ---------- */
+function polar() {
+  const R = +$('R').value, h = +$('h').value;
+  if (!(R > 0 && h > 0)) return;
+  const V = Math.PI * R * R * h;
+  $('volP').textContent = fmt(V);
+  $('litP').textContent = fmt(V * 1000, 0);
+}
+
+['L', 'W', 'a', 'b', 'c', 'precio'].forEach(id => $(id).addEventListener('input', calcular));
+$('giro').addEventListener('input', dibujar);
+['R', 'h'].forEach(id => $(id).addEventListener('input', polar));
+calcular(); polar();
+</script>
+</body>
+</html>
